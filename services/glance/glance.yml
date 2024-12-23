@@ -1,0 +1,72 @@
+server:
+  port: 8080
+
+pages:
+  - name: Home
+    columns:
+      - size: small
+        widgets:
+          - type: calendar
+          - type: group
+            widgets:
+                # Rugby Standings Extension
+              - type: extension
+                url: http://localhost:3000
+                allow-potentially-dangerous-html: true
+                cache: 15m
+                # F1 Extension
+              - type: extension
+                url: http://localhost:3001
+                allow-potentially-dangerous-html: true
+                cache: 15m
+
+          - type: rss
+            limit: 10
+            collapse-after: 3
+            cache: 3h
+            feeds:
+              - url: https://ciechanow.ski/atom.xml
+              - url: https://www.joshwcomeau.com/rss.xml
+                title: Josh Comeau
+              - url: https://samwho.dev/rss.xml
+              - url: https://awesomekling.github.io/feed.xml
+              - url: https://ishadeed.com/feed.xml
+                title: Ahmad Shadeed
+
+      - size: full
+        widgets:
+          - type: group
+            widgets:
+              - type: hacker-news
+              - type: lobsters
+          - type: videos
+            channels:
+              - UCfpCQ89W9wjkHc8J_6eTbBg # Outdoor Boys
+              - UCRcgy6GzDeccI7dkbbBna3Q # Lemmino
+              - UC_hzV1UIVP1yKmU_kVN3tFQ # SourSweet
+          - type: repository
+            repository: cloudflare/cloudflare-docs
+            pull-requests-limit: 5
+            issues-limit: 3
+            commits-limit: 3
+
+
+      - size: small
+        widgets:
+          - type: weather
+            location: London, United Kingdom
+
+          - type: markets
+            markets:
+              - symbol: SPY
+                name: S&P 500
+              - symbol: AMD
+                name: AMD
+              - symbol: BTC-USD
+                name: Bitcoin
+              - symbol: NVDA
+                name: NVIDIA
+              - symbol: AAPL
+                name: Apple
+              - symbol: MSFT
+                name: Microsoft
