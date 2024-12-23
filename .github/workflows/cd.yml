@@ -1,0 +1,54 @@
+name: Deploy to Linode
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v41
+        
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh/
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          
+      - name: Deploy and restart services
+        env:
+          HOST: ${{ secrets.LINODE_HOST }}
+          USER: ${{ secrets.LINODE_USER }}
+        run: |
+          # Function to deploy a service
+          deploy_service() {
+            local service=$1
+            local src=$2
+            local dest=$3
+            
+            echo "Deploying $service..."
+            scp $src $USER@$HOST:$dest
+            ssh $USER@$HOST "sudo systemctl restart $service"
+          }
+          
+          # Check each file and deploy if changed
+          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+            case $file in
+              "services/glance/glance.yml")
+                deploy_service "glance" "$file" "/etc/glance.yml"
+                ;;
+              "services/premiership-rugby-extension/premiership-rugby-extension.js")
+                deploy_service "premiership-rugby-extension" "$file" "/opt/premiership-rugby-extension/premiership-rugby-extension.js"
+                ;;
+              "services/f1-standings-extension/f1-standings-extension.js")
+                deploy_service "f1-standings-extension" "$file" "/opt/f1-standings-extension/f1-standings-extension.js"
+                ;;
+            esac
+          done
