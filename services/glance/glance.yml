@@ -70,3 +70,5 @@ pages:
                 name: Apple
               - symbol: MSFT
                 name: Microsoft
+              - symbol: GOOGL
+                name: Google

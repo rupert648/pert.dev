@@ -3,7 +3,7 @@ name: Deploy to Linode
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   deploy:
