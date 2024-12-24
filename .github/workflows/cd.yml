@@ -39,6 +39,7 @@ jobs:
           HOST: ${{ secrets.LINODE_HOST }}
           USER: ${{ secrets.LINODE_USER }}
         run: |
+          # Function to deploy a service
           deploy_service() {
             local service=$1
             local src=$2
@@ -49,14 +50,16 @@ jobs:
             ssh $USER@$HOST "sudo systemctl restart $service"
           }
           
-          # Simple files which just need to be sent over
-          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
-            case $file in
+          CHANGED_FILES="${{ steps.changed-files.outputs.all_changed_files }}"
+          
+          # Check each file and deploy if changed
+          echo "$CHANGED_FILES" | tr ' ' '\n' | while read -r file; do
+            case "$file" in
               "services/glance/glance.yml")
                 deploy_service "glance" "$file" "/etc/glance.yml"
                 ;;
               "services/premiership-rugby-extension/premiership-rugby-extension.js")
-                deploy_service "premiership-rugby-extension" "$file" "/opt/premiership-rugby-extension/premiership-rugby-extension.js"
+                deploy_service "premiership-rugby-extension" "$file" "/opt/premiership-rugby-extension/premiership-ruby-extension.js"
                 ;;
               "services/f1-standings-extension/f1-standings-extension.js")
                 deploy_service "f1-standings-extension" "$file" "/opt/f1-standings-extension/f1-standings-extension.js"
@@ -65,7 +68,7 @@ jobs:
           done
 
           # Deploy Zola site if blog files changed
-          if [[ ${{ steps.changed-files.outputs.all_changed_files }} == *"blog/"* ]]; then
+          if echo "$CHANGED_FILES" | grep -q "blog/"; then
             echo "Deploying Zola site..."
             ssh $USER@$HOST "rm -rf /etc/zola/public/*"
             scp -r blog/public/* $USER@$HOST:/etc/zola/public/
