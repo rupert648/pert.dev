@@ -3,7 +3,7 @@ name: Deploy to Linode
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   deploy:
@@ -14,7 +14,17 @@ jobs:
       - name: Get changed files
         id: changed-files
         uses: tj-actions/changed-files@v41
-        
+
+      - name: Install Zola
+        if: contains(steps.changed-files.outputs.all_changed_files, 'blog/')
+        uses: taiki-e/install-action@v2
+        with:
+          tool: zola@0.19.1
+
+      - name: Build Zola site
+        if: contains(steps.changed-files.outputs.all_changed_files, 'blog/')
+        run: cd blog && zola build
+      
       - name: Set up SSH
         run: |
           mkdir -p ~/.ssh/
@@ -27,7 +37,6 @@ jobs:
           HOST: ${{ secrets.LINODE_HOST }}
           USER: ${{ secrets.LINODE_USER }}
         run: |
-          # Function to deploy a service
           deploy_service() {
             local service=$1
             local src=$2
@@ -38,7 +47,7 @@ jobs:
             ssh $USER@$HOST "sudo systemctl restart $service"
           }
           
-          # Check each file and deploy if changed
+          # Simple files which just need to be sent over
           for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
             case $file in
               "services/glance/glance.yml")
@@ -52,3 +61,10 @@ jobs:
                 ;;
             esac
           done
+
+          # Deploy Zola site if blog files changed
+          if [[ ${{ steps.changed-files.outputs.all_changed_files }} == *"blog/"* ]]; then
+            echo "Deploying Zola site..."
+            ssh $USER@$HOST "rm -rf /etc/zola/public/*"
+            scp -r blog/public/* $USER@$HOST:/etc/zola/public/
+          fi
