@@ -14,9 +14,9 @@ comment = true
 
 ## Background
 
-Before I joined Cloudflare, I was working on a GraphQL service aggregating and untangling the spaghetti of data we received from the herd of microservices which kept NowTV (Sky's streaming service in the UK), Peacock (NBCUniversal's streaming platform), and SkyShowtime (a European streaming service) alive. At the time this was an entirely serverless service, built on AWS lambda serverless compute - a decision we would come to regret for a whole host of headaches and footguns, one of which I will try my best to detail in this post. Whilst I'd had some experience delivering some hobby projects onto various serverless compute platforms, this was my first time using them to deliver anything bigger than a university project. I and this team just so happened to be maintaining a not so insignificant service handling upwards of 3 million requests a day, across multiple regions, services and a disturbingly dynamic traffic pattern.
+Before I joined Cloudflare, I was working on a GraphQL service aggregating and untangling the spaghetti of data we received from the herd of microservices which kept NowTV (Sky's streaming service in the UK), Peacock (NBCUniversal's streaming platform), and SkyShowtime (a European streaming service) alive. At the time this was an entirely serverless service, built on [AWS lambda serverless](https://aws.amazon.com/lambda/) compute - a decision we would come to regret for a whole host of headaches and footguns, one of which I will try my best to detail in this post. Whilst I'd had some experience delivering some hobby projects onto various serverless compute platforms, this was my first time using them to deliver anything bigger than a university project. I and this team just so happened to be maintaining a not so insignificant service handling upwards of 3 million requests a day, across multiple regions, services and a disturbingly dynamic traffic pattern.
 
-One of the first things you will learn about AWS lambdas, is that most (most because not Cloudflare workers!) experience something called cold starts. Cold starts occur when a new instance of your Lambda function needs to be initialized from scratch. This happens in a few key scenarios; The most obvious case is when your function hasn't been invoked for a while (and by "a while" I mean as little as 15 minutes in some cases), AWS helpfully decides to tear down your execution environment. The next request that comes in has to wait for the entire container to spin up, your code to be loaded, and any initialization code to run.
+One of the first things you will learn about serverless platforms, is that most (most because [not Cloudflare workers!](https://blog.cloudflare.com/eliminating-cold-starts-with-cloudflare-workers/)) experience something called cold starts. Cold starts occur when a new instance of your Lambda function needs to be initialized from scratch. This happens in a few key scenarios; The most obvious case is when your function hasn't been invoked for a while (and by "a while" I mean as little as 15 minutes in some cases), AWS helpfully decides to tear down your execution environment. The next request that comes in has to wait for the entire container to spin up, your code to be loaded, and any initialization code to run.
 
 But here's where it gets interesting, especially in the JavaScript world - subsequent invocations are lightning fast because the V8 engine keeps your code warm and ready. This is what AWS calls a "warm start", and it's your best friend when dealing with high-traffic services. The execution environment stays alive, your database connections remain established, and any expensive initialization code only needs to run once.
 
@@ -24,7 +24,7 @@ But here's where it gets interesting, especially in the JavaScript world - subse
 
 Around February 2023, one lovely cold British morning in West London various users in the UK reported that their profile page heading texts were coming back in Italian - on our English site. Hmm. Strange, maybe a caching issue in our CDN? It didn't seem to last for long so we moved on. Later that day, we got a message from one of our German SkyShowtime customers, reporting that their account settings page was coming back in Polish - very odd. And by the time a Spanish customer was reporting that their checkout page was in Portuguese (which I'm sure was extremely upsetting), we knew something was afoot.
 
-Immediately like all good engineers we blamed another team. This time it was the content database team, who were responsible for the CMS which returned the various tags, labels and similar page content which we were seeing mistranslated. The desired location and language of those tags were passed from the front end, through our service and forwarded to this CMS service via headers; based on these headers the correct language content was returned. Here's how the request flow should have worked (and how it actually failed):
+Immediately like all good engineers we blamed another team. This time it was the content database team, who were responsible for the CMS which returned the various tags, labels and similar page content which we were seeing mistranslated. The desired location and language of those tags were passed from the front end, through our service and forwarded to this CMS service via headers; based on these headers the correct language content was returned. Here's how the request flow should have worked:
 
 {% mermaid() %}
 sequenceDiagram
@@ -50,7 +50,7 @@ So two more points of possible failure:
 
 Seeing as it was our job, we investigated our layer - and started where any experienced engineer would at the commits which had been added to the codebase since the last release, after which when the bug began to occur.
 
-This is where the innocuous commit titled something along the lines of "optimised n+1 problem for tag fetching from cms", authored by yours truly.
+This is where we saw the innocuous commit titled something along the lines of "optimised n+1 problem for tag fetching from cms", authored by yours truly.
 
 ## The N+1 Problem
 
@@ -115,7 +115,8 @@ const resolvers = {
       const pages = await fetchAllCheckoutPages();
       const pageIds = pages.map(page => page.id);
       
-      // Fetch ALL tags for ALL pages in one query
+      // Fetch ALL tags for ALL pages in one query 
+      // (or this could just be combined into one query above)
       const allTags = await fetchTagsForPages(pageIds);
       
       // Return pages with their tags already attached
@@ -127,7 +128,6 @@ const resolvers = {
       // since it's already included in the returned object
     }
   }
-  // No need for CheckoutPage.tags resolver anymore!
 }
 ```
 
@@ -138,8 +138,6 @@ However, in our case, we were also resolving a subset of those tags in another p
 Haha... I thought to myself, I have an easy solution, another in-mem cache! We'll just use a hashmap, store each value by its tag name, and boom, before making subsequent calls to the CMS we'll just check this HashMap for the value and return this early. This worked great! I halved the number of calls to this CMS and got a pat on the back. Nice.
 
 However, my mind had been ruined from months of working under the "single request single lifetime" type of programming which some of you might also have been sucked into whilst working in a serverless environment, and so carelessly put this hashmap globally, rather than attaching it to the context of the request. Silly me.
-
-In my defence this got through approvals from three senior code reviewers, so I delegate all fault of course.
 
 As I said, the cache key into this HashMap was just the label of the content requested from the CMS. But to make life easy, the label was the same between languages, only content differed based on the aforementioned headers. So you can probably see where this was going...
 
