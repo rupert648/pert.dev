@@ -34,42 +34,11 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
           
-      - name: Deploy and restart services
+      - name: Deploy
         env:
           HOST: ${{ secrets.LINODE_HOST }}
           USER: ${{ secrets.LINODE_USER }}
+          CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
         run: |
-          # Function to deploy a service
-          deploy_service() {
-            local service=$1
-            local src=$2
-            local dest=$3
-            
-            echo "Deploying $service..."
-            scp $src $USER@$HOST:$dest
-            ssh $USER@$HOST "sudo systemctl restart $service"
-          }
-          
-          CHANGED_FILES="${{ steps.changed-files.outputs.all_changed_files }}"
-          
-          # Check each file and deploy if changed
-          echo "$CHANGED_FILES" | tr ' ' '\n' | while read -r file; do
-            case "$file" in
-              "services/glance/glance.yml")
-                deploy_service "glance" "$file" "/etc/glance.yml"
-                ;;
-              "services/premiership-rugby-extension/premiership-rugby-extension.js")
-                deploy_service "premiership-rugby-extension" "$file" "/opt/premiership-rugby-extension/premiership-ruby-extension.js"
-                ;;
-              "services/f1-standings-extension/f1-standings-extension.js")
-                deploy_service "f1-standings-extension" "$file" "/opt/f1-standings-extension/f1-standings-extension.js"
-                ;;
-            esac
-          done
-
-          # Deploy Zola site if blog files changed
-          if echo "$CHANGED_FILES" | grep -q "blog/"; then
-            echo "Deploying Zola site..."
-            ssh $USER@$HOST "rm -rf /etc/zola/public/*"
-            scp -r blog/public/* $USER@$HOST:/etc/zola/public/
-          fi
+          chmod +x ./scripts/deploy.sh
+          ./scripts/deploy.sh "$CHANGED_FILES"
