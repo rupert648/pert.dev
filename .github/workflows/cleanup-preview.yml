@@ -1,0 +1,35 @@
+name: Cleanup PR Preview
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: main  
+
+      - name: Get PR number
+        id: pr
+        run: echo "PR_NUMBER=pr-${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+      
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh/
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          
+      - name: Cleanup Preview
+        env:
+          HOST: ${{ secrets.LINODE_HOST }}
+          USER: ${{ secrets.LINODE_USER }}
+          PREVIEW_ID: ${{ steps.pr.outputs.PR_NUMBER }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+        run: |
+          chmod +x ./scripts/cleanup.sh
+          ./scripts/cleanup.sh
