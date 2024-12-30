@@ -24,13 +24,28 @@ jobs:
         with:
           tool: zola@0.19.1
 
-      # We need to update this so the base links in zola point to the right place
       - name: Update base_url in config
         run: |
+          echo "Original config:"
+          cat blog/config.toml | grep base_url
           sed -i "s|base_url = \"https://pert.dev\"|base_url = \"https://pr-${{ github.event.pull_request.number }}.pert.dev\"|" blog/config.toml
+          echo "Updated config:"
+          cat blog/config.toml | grep base_url
+          
+          # Show full config for debugging
+          echo "Full config:"
+          cat blog/config.toml
 
       - name: Build Zola site
-        run: cd blog && zola build
+        run: |
+          echo "Config before build:"
+          cat blog/config.toml | grep base_url
+          cd blog
+          zola build
+          echo "Checking built files for URLs:"
+          grep -r "pert.dev" public/ || echo "No direct pert.dev references found"
+          echo "Sample of generated HTML:"
+          find public -name "*.html" -type f | head -n 1 | xargs cat
       
       - name: Set up SSH
         run: |
