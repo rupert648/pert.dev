@@ -46,7 +46,7 @@ async fn main() {
 
     let origins = [
         "http://127.0.0.1:1111".parse().unwrap(),
-        "https//pert.dev".parse().unwrap(),
+        "https://pert.dev".parse().unwrap(),
     ];
     let cors = build_cors(origins.to_vec());
 
