@@ -97,7 +97,6 @@ mod tests {
     use tower_http::cors::Any;
 
     async fn setup_test_app() -> (Router, NamedTempFile) {
-        // Create temporary database file
         let db_file = NamedTempFile::new().expect("Failed to create temp file");
         let conn = Connection::open(db_file.path()).expect("Failed to open database");
 

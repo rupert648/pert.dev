@@ -185,11 +185,13 @@ main() {
             "services/f1-standings-extension/f1-standings-extension.js")
                 deploy_service "f1-standings-extension" "$file" "/opt/f1-standings-extension/f1-standings-extension.js"
                 ;;
-            "services/backend")
-                deploy_backend
-                ;;
         esac
     done
+
+    # Deploy backend site if services/backend changed
+    if echo "$changed_files" | grep -q "services/backend"; then
+        deploy_backend
+    fi
     
     # Deploy Zola site if blog files changed
     if echo "$changed_files" | grep -q "blog/"; then
