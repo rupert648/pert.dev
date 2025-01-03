@@ -19,7 +19,7 @@ pub struct AppState {
     db: Mutex<Connection>,
 }
 
-const PORT: &str = "3000";
+const PORT: &str = "3002";
 
 fn build_cors(origins: Vec<HeaderValue>) -> CorsLayer {
     CorsLayer::new()

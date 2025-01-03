@@ -115,6 +115,55 @@ deploy_zola() {
     log_success "Completed Zola site deployment"
 }
 
+deploy_backend() {
+    log_info "Starting backend deployment"
+    
+    if [ ! -d "services/backend/target/release" ]; then
+        log_error "Backend release build not found"
+        return 1
+    fi
+    
+    # Create backup of existing build
+    if ssh "$USER@$HOST" "[ -d /opt/backend/target ]"; then
+        local backup_name="/opt/backend/target.backup-$(date +%Y%m%d-%H%M%S)"
+        log_info "Creating backup: $backup_name"
+        ssh "$USER@$HOST" "sudo cp -r /opt/backend/target $backup_name"
+    fi
+    
+    log_info "Ensuring target directory exists"
+    ssh "$USER@$HOST" "sudo mkdir -p /opt/backend"
+    
+    log_info "Copying new build"
+    scp -r services/backend/target "$USER@$HOST:~/backend_temp" || {
+        log_error "Failed to copy backend build to remote host"
+        return 1
+    }
+    
+    log_info "Moving build to final destination"
+    ssh "$USER@$HOST" "sudo rm -rf /opt/backend/target && sudo mv ~/backend_temp /opt/backend/target" || {
+        log_error "Failed to move build to destination"
+        return 1
+    }
+    
+    log_info "Restarting backend service"
+    if ssh "$USER@$HOST" "sudo systemctl restart backend"; then
+        log_success "Successfully restarted backend service"
+    else
+        log_error "Failed to restart backend service"
+        return 1
+    fi
+    
+    log_info "Verifying backend service status"
+    if ssh "$USER@$HOST" "sudo systemctl is-active backend"; then
+        log_success "Backend service is running"
+    else
+        log_error "Backend service failed to start"
+        return 1
+    fi
+    
+    log_success "Completed backend deployment"
+}
+
 # Main deployment logic
 main() {
     local changed_files="$1"
@@ -135,6 +184,9 @@ main() {
                 ;;
             "services/f1-standings-extension/f1-standings-extension.js")
                 deploy_service "f1-standings-extension" "$file" "/opt/f1-standings-extension/f1-standings-extension.js"
+                ;;
+            "services/backend")
+                deploy_backend
                 ;;
         esac
     done
