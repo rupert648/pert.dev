@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v41
+
+      - name: Install Rust toolchain
+        if: contains(steps.changed-files.outputs.all_changed_files, 'services/backend')
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          components: rustfmt, clippy
+          override: true
+
+      - name: Run cargo test
+        if: contains(steps.changed-files.outputs.all_changed_files, 'services/backend')
+        working-directory: services/backend
+        run: cargo test
+
+      - name: Run clippy
+        if: contains(steps.changed-files.outputs.all_changed_files, 'services/backend')
+        working-directory: services/backend
+        run: cargo clippy -- -D warnings
+
+      - name: Check formatting
+        if: contains(steps.changed-files.outputs.all_changed_files, 'services/backend')
+        working-directory: services/backend
+        run: cargo fmt -- --check

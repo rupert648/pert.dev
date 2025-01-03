@@ -26,6 +26,18 @@ jobs:
       - name: Build Zola site
         if: contains(steps.changed-files.outputs.all_changed_files, 'blog/')
         run: cd blog && zola build
+
+      - name: Install Rust toolchain
+        if: contains(steps.changed-files.outputs.all_changed_files, 'services/backend')
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+
+      - name: Build Backend Rust Server
+        if: contains(steps.changed-files.outputs.all_changed_files, 'services/backend')
+        run: cd services/backend && cargo build --release
       
       - name: Set up SSH
         run: |
