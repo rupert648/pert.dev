@@ -131,16 +131,18 @@ deploy_backend() {
     fi
     
     log_info "Ensuring directory exists"
-    ssh "$USER@$HOST" "sudo mkdir -p /opt/backend"
+    ssh "$USER@$HOST" "sudo mkdir -p /opt/backend/target/release"
     
     log_info "Copying release build"
-    scp -r services/backend/target/release "$USER@$HOST:~/backend_temp" || {
+    scp -C -c aes128-gcm@openssh.com -r services/backend/target/release/* "$USER@$HOST:~/backend_temp/" || {
         log_error "Failed to copy backend build to remote host"
         return 1
     }
     
     log_info "Moving build to final destination"
-    ssh "$USER@$HOST" "sudo rm -rf /opt/backend/release && sudo mv ~/backend_temp /opt/backend/release" || {
+    ssh "$USER@$HOST" "sudo rm -rf /opt/backend/target/release/* && \
+                       sudo mv ~/backend_temp/* /opt/backend/target/release/ && \
+                       sudo chown -R backend:backend /opt/backend" || {
         log_error "Failed to move build to destination"
         return 1
     }
