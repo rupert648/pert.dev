@@ -1,9 +1,11 @@
 use axum::{
     extract::{Path, State},
     http::{HeaderValue, StatusCode},
+    response::IntoResponse,
     routing::get,
     Router,
 };
+use hyper::{header, HeaderMap};
 use rusqlite::{Connection, Result as SqliteResult};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -64,7 +66,7 @@ async fn main() {
 async fn count_view(
     Path(path): Path<String>,
     State(state): State<Arc<AppState>>,
-) -> Result<axum::Json<ViewCount>, StatusCode> {
+) -> Result<impl IntoResponse, StatusCode> {
     let conn = state.db.lock().await;
 
     let result: SqliteResult<i64> = conn.query_row(
@@ -79,7 +81,15 @@ async fn count_view(
     );
 
     match result {
-        Ok(count) => Ok(axum::Json(ViewCount { views: count })),
+        Ok(count) => {
+            let mut headers = HeaderMap::new();
+            headers.insert(
+                header::ACCESS_CONTROL_ALLOW_ORIGIN,
+                HeaderValue::from_static("https://pert.dev"),
+            );
+
+            Ok((headers, axum::Json(ViewCount { views: count })))
+        }
         Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
     }
 }
