@@ -124,23 +124,23 @@ deploy_backend() {
     fi
     
     # Create backup of existing build
-    if ssh "$USER@$HOST" "[ -d /opt/backend/target ]"; then
-        local backup_name="/opt/backend/target.backup-$(date +%Y%m%d-%H%M%S)"
+    if ssh "$USER@$HOST" "[ -d /opt/backend/release ]"; then
+        local backup_name="/opt/backend/release.backup-$(date +%Y%m%d-%H%M%S)"
         log_info "Creating backup: $backup_name"
-        ssh "$USER@$HOST" "sudo cp -r /opt/backend/target $backup_name"
+        ssh "$USER@$HOST" "sudo cp -r /opt/backend/release $backup_name"
     fi
     
-    log_info "Ensuring target directory exists"
+    log_info "Ensuring directory exists"
     ssh "$USER@$HOST" "sudo mkdir -p /opt/backend"
     
-    log_info "Copying new build"
-    scp -r services/backend/target "$USER@$HOST:~/backend_temp" || {
+    log_info "Copying release build"
+    scp -r services/backend/target/release "$USER@$HOST:~/backend_temp" || {
         log_error "Failed to copy backend build to remote host"
         return 1
     }
     
     log_info "Moving build to final destination"
-    ssh "$USER@$HOST" "sudo rm -rf /opt/backend/target && sudo mv ~/backend_temp /opt/backend/target" || {
+    ssh "$USER@$HOST" "sudo rm -rf /opt/backend/release && sudo mv ~/backend_temp /opt/backend/release" || {
         log_error "Failed to move build to destination"
         return 1
     }
