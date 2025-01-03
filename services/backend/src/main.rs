@@ -8,7 +8,7 @@ use rusqlite::{Connection, Result as SqliteResult};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tower_http::cors::CorsLayer;
+use tower_http::cors::{Any, CorsLayer};
 
 #[derive(Serialize, Deserialize)]
 struct ViewCount {
@@ -21,10 +21,12 @@ pub struct AppState {
 
 const PORT: &str = "3002";
 
-fn build_cors(origins: Vec<HeaderValue>) -> CorsLayer {
+// TODO: fix cors
+fn build_cors(_origins: Vec<HeaderValue>) -> CorsLayer {
     CorsLayer::new()
-        .allow_origin(origins)
+        .allow_origin(Any)
         .allow_methods([axum::http::Method::GET])
+        .allow_credentials(true)
 }
 
 #[tokio::main]
@@ -39,6 +41,8 @@ async fn main() {
         [],
     )
     .expect("Failed to create table");
+
+    println!("Using Cors!");
 
     let state = Arc::new(AppState {
         db: Mutex::new(conn),
@@ -119,7 +123,8 @@ mod tests {
 
         let cors = CorsLayer::new()
             .allow_origin(Any)
-            .allow_methods([axum::http::Method::GET]);
+            .allow_methods([axum::http::Method::GET])
+            .allow_credentials(true);
 
         let app = Router::new()
             .route("/count/*path", get(count_view))
