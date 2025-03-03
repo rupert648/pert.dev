@@ -25,6 +25,7 @@ pages:
             collapse-after: 3
             cache: 3h
             feeds:
+              - url: https://robmartinez.substack.com/feed
               - url: https://ciechanow.ski/atom.xml
               - url: https://www.joshwcomeau.com/rss.xml
                 title: Josh Comeau
