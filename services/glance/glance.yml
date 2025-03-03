@@ -19,7 +19,18 @@ pages:
                 url: http://localhost:3001
                 allow-potentially-dangerous-html: true
                 cache: 15m
+          - type: repository
+            repository: cloudflare/cloudflare-docs
+            pull-requests-limit: 5
+            issues-limit: 3
+            commits-limit: 3
 
+      - size: full
+        widgets:
+          - type: group
+            widgets:
+              - type: hacker-news
+              - type: lobsters
           - type: rss
             limit: 10
             collapse-after: 3
@@ -33,23 +44,11 @@ pages:
               - url: https://awesomekling.github.io/feed.xml
               - url: https://ishadeed.com/feed.xml
                 title: Ahmad Shadeed
-
-      - size: full
-        widgets:
-          - type: group
-            widgets:
-              - type: hacker-news
-              - type: lobsters
           - type: videos
             channels:
               - UCfpCQ89W9wjkHc8J_6eTbBg # Outdoor Boys
               - UCRcgy6GzDeccI7dkbbBna3Q # Lemmino
               - UC_hzV1UIVP1yKmU_kVN3tFQ # SourSweet
-          - type: repository
-            repository: cloudflare/cloudflare-docs
-            pull-requests-limit: 5
-            issues-limit: 3
-            commits-limit: 3
 
 
       - size: small
