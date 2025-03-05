@@ -37,11 +37,13 @@ pages:
             cache: 3h
             feeds:
               - url: https://robmartinez.substack.com/feed
+                title: Rob Martinez
               - url: https://ciechanow.ski/atom.xml
               - url: https://www.joshwcomeau.com/rss.xml
                 title: Josh Comeau
               - url: https://samwho.dev/rss.xml
               - url: https://awesomekling.github.io/feed.xml
+                title: Ladybird
               - url: https://ishadeed.com/feed.xml
                 title: Ahmad Shadeed
           - type: videos
@@ -56,17 +58,11 @@ pages:
           - type: weather
             location: London, United Kingdom
 
-          - type: markets
-            markets:
-              - symbol: SPY
-                name: S&P 500
-              - symbol: AMD
-                name: AMD
-              - symbol: BTC-USD
-                name: Bitcoin
-              - symbol: NVDA
-                name: NVIDIA
-              - symbol: AAPL
-                name: Apple
-              - symbol: MSFT
-                name: Microsoft
+          - type: monitor
+            cache: 1m
+            title: Services
+            sites:
+              - title: Homepage
+                url: https://pert.dev
+              - title: Spotsync
+                url: https://spotsync.uk
