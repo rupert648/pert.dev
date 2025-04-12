@@ -1,6 +1,6 @@
 +++
 title = "WillDoLater.dev"
-description = "A joke website built in rust meant for discovering and storing the worlds oldest todos"
+description = "A joke website built in rust meant for discovering and storing the worlds oldest todos."
 weight = 1
 
 [extra]
