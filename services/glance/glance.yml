@@ -48,6 +48,8 @@ pages:
                 title: Ahmad Shadeed
               - url: https://www.clientserver.dev/feed.xml
                 title: Client Server
+              - url: https://www.joanwestenberg.com/rss/
+                title: Joan Westenberg
           - type: videos
             channels:
               - UCfpCQ89W9wjkHc8J_6eTbBg # Outdoor Boys
